@@ -1,0 +1,530 @@
+[
+  {
+    "name": "args",
+    "version": "2.7.0",
+    "licenseFile": "args-2.7.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/args"
+  },
+  {
+    "name": "async",
+    "version": "2.13.1",
+    "licenseFile": "async-2.13.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/async"
+  },
+  {
+    "name": "audio_service",
+    "version": "0.18.19",
+    "licenseFile": "audio_service-0.18.19.LICENSE.txt",
+    "source": "https://pub.dev/packages/audio_service"
+  },
+  {
+    "name": "audio_service_platform_interface",
+    "version": "0.1.3",
+    "licenseFile": "audio_service_platform_interface-0.1.3.LICENSE.txt",
+    "source": "https://pub.dev/packages/audio_service_platform_interface"
+  },
+  {
+    "name": "audio_service_web",
+    "version": "0.1.4",
+    "licenseFile": "audio_service_web-0.1.4.LICENSE.txt",
+    "source": "https://pub.dev/packages/audio_service_web"
+  },
+  {
+    "name": "audio_session",
+    "version": "0.2.4",
+    "licenseFile": "audio_session-0.2.4.LICENSE.txt",
+    "source": "https://pub.dev/packages/audio_session"
+  },
+  {
+    "name": "boolean_selector",
+    "version": "2.1.2",
+    "licenseFile": "boolean_selector-2.1.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/boolean_selector"
+  },
+  {
+    "name": "characters",
+    "version": "1.4.1",
+    "licenseFile": "characters-1.4.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/characters"
+  },
+  {
+    "name": "clock",
+    "version": "1.1.3",
+    "licenseFile": "clock-1.1.3.LICENSE.txt",
+    "source": "https://pub.dev/packages/clock"
+  },
+  {
+    "name": "code_assets",
+    "version": "1.2.1",
+    "licenseFile": "code_assets-1.2.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/code_assets"
+  },
+  {
+    "name": "collection",
+    "version": "1.19.1",
+    "licenseFile": "collection-1.19.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/collection"
+  },
+  {
+    "name": "crypto",
+    "version": "3.0.7",
+    "licenseFile": "crypto-3.0.7.LICENSE.txt",
+    "source": "https://pub.dev/packages/crypto"
+  },
+  {
+    "name": "fake_async",
+    "version": "1.3.3",
+    "licenseFile": "fake_async-1.3.3.LICENSE.txt",
+    "source": "https://pub.dev/packages/fake_async"
+  },
+  {
+    "name": "ffi",
+    "version": "2.2.0",
+    "licenseFile": "ffi-2.2.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/ffi"
+  },
+  {
+    "name": "ffi_leak_tracker",
+    "version": "0.1.2",
+    "licenseFile": "ffi_leak_tracker-0.1.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/ffi_leak_tracker"
+  },
+  {
+    "name": "file",
+    "version": "7.0.1",
+    "licenseFile": "file-7.0.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/file"
+  },
+  {
+    "name": "fixnum",
+    "version": "1.1.1",
+    "licenseFile": "fixnum-1.1.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/fixnum"
+  },
+  {
+    "name": "flutter",
+    "version": "flutter-sdk",
+    "licenseFile": "flutter-flutter-sdk.LICENSE.txt",
+    "source": "https://github.com/flutter/flutter"
+  },
+  {
+    "name": "flutter_cache_manager",
+    "version": "3.4.5",
+    "licenseFile": "flutter_cache_manager-3.4.5.LICENSE.txt",
+    "source": "https://pub.dev/packages/flutter_cache_manager"
+  },
+  {
+    "name": "flutter_lints",
+    "version": "6.0.0",
+    "licenseFile": "flutter_lints-6.0.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/flutter_lints"
+  },
+  {
+    "name": "flutter_secure_storage",
+    "version": "10.3.4",
+    "licenseFile": "flutter_secure_storage-10.3.4.LICENSE.txt",
+    "source": "https://pub.dev/packages/flutter_secure_storage"
+  },
+  {
+    "name": "flutter_secure_storage_darwin",
+    "version": "0.3.2",
+    "licenseFile": "flutter_secure_storage_darwin-0.3.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/flutter_secure_storage_darwin"
+  },
+  {
+    "name": "flutter_secure_storage_linux",
+    "version": "3.0.3",
+    "licenseFile": "flutter_secure_storage_linux-3.0.3.LICENSE.txt",
+    "source": "https://pub.dev/packages/flutter_secure_storage_linux"
+  },
+  {
+    "name": "flutter_secure_storage_platform_interface",
+    "version": "2.1.1",
+    "licenseFile": "flutter_secure_storage_platform_interface-2.1.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/flutter_secure_storage_platform_interface"
+  },
+  {
+    "name": "flutter_secure_storage_web",
+    "version": "2.1.1",
+    "licenseFile": "flutter_secure_storage_web-2.1.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/flutter_secure_storage_web"
+  },
+  {
+    "name": "flutter_secure_storage_windows",
+    "version": "4.2.2",
+    "licenseFile": "flutter_secure_storage_windows-4.2.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/flutter_secure_storage_windows"
+  },
+  {
+    "name": "flutter_test",
+    "version": "flutter-sdk",
+    "licenseFile": "flutter_test-flutter-sdk.LICENSE.txt",
+    "source": "https://github.com/flutter/flutter"
+  },
+  {
+    "name": "flutter_web_plugins",
+    "version": "flutter-sdk",
+    "licenseFile": "flutter_web_plugins-flutter-sdk.LICENSE.txt",
+    "source": "https://github.com/flutter/flutter"
+  },
+  {
+    "name": "hooks",
+    "version": "2.0.2",
+    "licenseFile": "hooks-2.0.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/hooks"
+  },
+  {
+    "name": "http",
+    "version": "1.6.0",
+    "licenseFile": "http-1.6.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/http"
+  },
+  {
+    "name": "http_parser",
+    "version": "4.1.2",
+    "licenseFile": "http_parser-4.1.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/http_parser"
+  },
+  {
+    "name": "jni",
+    "version": "1.1.0",
+    "licenseFile": "jni-1.1.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/jni"
+  },
+  {
+    "name": "jni_flutter",
+    "version": "1.0.4+1",
+    "licenseFile": "jni_flutter-1.0.4+1.LICENSE.txt",
+    "source": "https://pub.dev/packages/jni_flutter"
+  },
+  {
+    "name": "jni_util",
+    "version": "1.0.0",
+    "licenseFile": "jni_util-1.0.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/jni_util"
+  },
+  {
+    "name": "js",
+    "version": "0.7.2",
+    "licenseFile": "js-0.7.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/js"
+  },
+  {
+    "name": "just_audio",
+    "version": "0.10.6",
+    "licenseFile": "just_audio-0.10.6.LICENSE.txt",
+    "source": "https://pub.dev/packages/just_audio"
+  },
+  {
+    "name": "just_audio_platform_interface",
+    "version": "4.6.0",
+    "licenseFile": "just_audio_platform_interface-4.6.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/just_audio_platform_interface"
+  },
+  {
+    "name": "just_audio_web",
+    "version": "0.4.16",
+    "licenseFile": "just_audio_web-0.4.16.LICENSE.txt",
+    "source": "https://pub.dev/packages/just_audio_web"
+  },
+  {
+    "name": "leak_tracker",
+    "version": "11.0.2",
+    "licenseFile": "leak_tracker-11.0.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/leak_tracker"
+  },
+  {
+    "name": "leak_tracker_flutter_testing",
+    "version": "3.0.10",
+    "licenseFile": "leak_tracker_flutter_testing-3.0.10.LICENSE.txt",
+    "source": "https://pub.dev/packages/leak_tracker_flutter_testing"
+  },
+  {
+    "name": "leak_tracker_testing",
+    "version": "3.0.2",
+    "licenseFile": "leak_tracker_testing-3.0.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/leak_tracker_testing"
+  },
+  {
+    "name": "lints",
+    "version": "6.1.0",
+    "licenseFile": "lints-6.1.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/lints"
+  },
+  {
+    "name": "logging",
+    "version": "1.3.0",
+    "licenseFile": "logging-1.3.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/logging"
+  },
+  {
+    "name": "matcher",
+    "version": "0.12.20",
+    "licenseFile": "matcher-0.12.20.LICENSE.txt",
+    "source": "https://pub.dev/packages/matcher"
+  },
+  {
+    "name": "material_color_utilities",
+    "version": "0.13.0",
+    "licenseFile": "material_color_utilities-0.13.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/material_color_utilities"
+  },
+  {
+    "name": "meta",
+    "version": "1.18.3",
+    "licenseFile": "meta-1.18.3.LICENSE.txt",
+    "source": "https://pub.dev/packages/meta"
+  },
+  {
+    "name": "objective_c",
+    "version": "9.5.0",
+    "licenseFile": "objective_c-9.5.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/objective_c"
+  },
+  {
+    "name": "package_config",
+    "version": "3.0.0",
+    "licenseFile": "package_config-3.0.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/package_config"
+  },
+  {
+    "name": "path",
+    "version": "1.9.1",
+    "licenseFile": "path-1.9.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/path"
+  },
+  {
+    "name": "path_provider",
+    "version": "2.1.6",
+    "licenseFile": "path_provider-2.1.6.LICENSE.txt",
+    "source": "https://pub.dev/packages/path_provider"
+  },
+  {
+    "name": "path_provider_android",
+    "version": "2.3.1",
+    "licenseFile": "path_provider_android-2.3.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/path_provider_android"
+  },
+  {
+    "name": "path_provider_foundation",
+    "version": "2.6.0",
+    "licenseFile": "path_provider_foundation-2.6.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/path_provider_foundation"
+  },
+  {
+    "name": "path_provider_linux",
+    "version": "2.2.2",
+    "licenseFile": "path_provider_linux-2.2.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/path_provider_linux"
+  },
+  {
+    "name": "path_provider_platform_interface",
+    "version": "2.1.3",
+    "licenseFile": "path_provider_platform_interface-2.1.3.LICENSE.txt",
+    "source": "https://pub.dev/packages/path_provider_platform_interface"
+  },
+  {
+    "name": "path_provider_windows",
+    "version": "2.3.0",
+    "licenseFile": "path_provider_windows-2.3.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/path_provider_windows"
+  },
+  {
+    "name": "platform",
+    "version": "3.2.0",
+    "licenseFile": "platform-3.2.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/platform"
+  },
+  {
+    "name": "plugin_platform_interface",
+    "version": "2.1.8",
+    "licenseFile": "plugin_platform_interface-2.1.8.LICENSE.txt",
+    "source": "https://pub.dev/packages/plugin_platform_interface"
+  },
+  {
+    "name": "pub_semver",
+    "version": "2.2.1",
+    "licenseFile": "pub_semver-2.2.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/pub_semver"
+  },
+  {
+    "name": "record_use",
+    "version": "0.6.0",
+    "licenseFile": "record_use-0.6.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/record_use"
+  },
+  {
+    "name": "rxdart",
+    "version": "0.28.0",
+    "licenseFile": "rxdart-0.28.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/rxdart"
+  },
+  {
+    "name": "shared_preferences",
+    "version": "2.5.6",
+    "licenseFile": "shared_preferences-2.5.6.LICENSE.txt",
+    "source": "https://pub.dev/packages/shared_preferences"
+  },
+  {
+    "name": "shared_preferences_android",
+    "version": "2.4.28",
+    "licenseFile": "shared_preferences_android-2.4.28.LICENSE.txt",
+    "source": "https://pub.dev/packages/shared_preferences_android"
+  },
+  {
+    "name": "shared_preferences_foundation",
+    "version": "2.5.7",
+    "licenseFile": "shared_preferences_foundation-2.5.7.LICENSE.txt",
+    "source": "https://pub.dev/packages/shared_preferences_foundation"
+  },
+  {
+    "name": "shared_preferences_linux",
+    "version": "2.4.1",
+    "licenseFile": "shared_preferences_linux-2.4.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/shared_preferences_linux"
+  },
+  {
+    "name": "shared_preferences_platform_interface",
+    "version": "2.4.2",
+    "licenseFile": "shared_preferences_platform_interface-2.4.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/shared_preferences_platform_interface"
+  },
+  {
+    "name": "shared_preferences_web",
+    "version": "2.4.3",
+    "licenseFile": "shared_preferences_web-2.4.3.LICENSE.txt",
+    "source": "https://pub.dev/packages/shared_preferences_web"
+  },
+  {
+    "name": "shared_preferences_windows",
+    "version": "2.4.1",
+    "licenseFile": "shared_preferences_windows-2.4.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/shared_preferences_windows"
+  },
+  {
+    "name": "sky_engine",
+    "version": "flutter-sdk",
+    "licenseFile": "sky_engine-flutter-sdk.LICENSE.txt",
+    "source": "https://github.com/flutter/flutter"
+  },
+  {
+    "name": "source_span",
+    "version": "1.10.2",
+    "licenseFile": "source_span-1.10.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/source_span"
+  },
+  {
+    "name": "sqflite",
+    "version": "2.4.4+2",
+    "licenseFile": "sqflite-2.4.4+2.LICENSE.txt",
+    "source": "https://pub.dev/packages/sqflite"
+  },
+  {
+    "name": "sqflite_android",
+    "version": "2.4.4+1",
+    "licenseFile": "sqflite_android-2.4.4+1.LICENSE.txt",
+    "source": "https://pub.dev/packages/sqflite_android"
+  },
+  {
+    "name": "sqflite_common",
+    "version": "2.5.14",
+    "licenseFile": "sqflite_common-2.5.14.LICENSE.txt",
+    "source": "https://pub.dev/packages/sqflite_common"
+  },
+  {
+    "name": "sqflite_darwin",
+    "version": "2.4.4+1",
+    "licenseFile": "sqflite_darwin-2.4.4+1.LICENSE.txt",
+    "source": "https://pub.dev/packages/sqflite_darwin"
+  },
+  {
+    "name": "sqflite_platform_interface",
+    "version": "2.4.2",
+    "licenseFile": "sqflite_platform_interface-2.4.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/sqflite_platform_interface"
+  },
+  {
+    "name": "stack_trace",
+    "version": "1.12.2",
+    "licenseFile": "stack_trace-1.12.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/stack_trace"
+  },
+  {
+    "name": "stream_channel",
+    "version": "2.1.4",
+    "licenseFile": "stream_channel-2.1.4.LICENSE.txt",
+    "source": "https://pub.dev/packages/stream_channel"
+  },
+  {
+    "name": "string_scanner",
+    "version": "1.4.1",
+    "licenseFile": "string_scanner-1.4.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/string_scanner"
+  },
+  {
+    "name": "synchronized",
+    "version": "3.5.0",
+    "licenseFile": "synchronized-3.5.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/synchronized"
+  },
+  {
+    "name": "term_glyph",
+    "version": "1.2.2",
+    "licenseFile": "term_glyph-1.2.2.LICENSE.txt",
+    "source": "https://pub.dev/packages/term_glyph"
+  },
+  {
+    "name": "test_api",
+    "version": "0.7.12",
+    "licenseFile": "test_api-0.7.12.LICENSE.txt",
+    "source": "https://pub.dev/packages/test_api"
+  },
+  {
+    "name": "typed_data",
+    "version": "1.4.0",
+    "licenseFile": "typed_data-1.4.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/typed_data"
+  },
+  {
+    "name": "uuid",
+    "version": "4.6.0",
+    "licenseFile": "uuid-4.6.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/uuid"
+  },
+  {
+    "name": "vector_math",
+    "version": "2.4.0",
+    "licenseFile": "vector_math-2.4.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/vector_math"
+  },
+  {
+    "name": "vm_service",
+    "version": "15.3.0",
+    "licenseFile": "vm_service-15.3.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/vm_service"
+  },
+  {
+    "name": "web",
+    "version": "1.1.1",
+    "licenseFile": "web-1.1.1.LICENSE.txt",
+    "source": "https://pub.dev/packages/web"
+  },
+  {
+    "name": "win32",
+    "version": "6.4.0",
+    "licenseFile": "win32-6.4.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/win32"
+  },
+  {
+    "name": "xdg_directories",
+    "version": "1.1.0",
+    "licenseFile": "xdg_directories-1.1.0.LICENSE.txt",
+    "source": "https://pub.dev/packages/xdg_directories"
+  },
+  {
+    "name": "yaml",
+    "version": "3.1.4",
+    "licenseFile": "yaml-3.1.4.LICENSE.txt",
+    "source": "https://pub.dev/packages/yaml"
+  }
+]

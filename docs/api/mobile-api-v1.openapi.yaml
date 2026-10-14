@@ -1,0 +1,1986 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: Sesh Music mobile extension API
+  version: 1.0.0
+  description: 'Implemented v1 contract for the Flutter client and the existing single Go application. All paths
+    are relative to /rest/sesh/v1. Existing account authentication protects JSON, artwork and audio equally. IDs
+    are opaque and are not interchangeable with legacy Subsonic item IDs. Durations in JSON use integer milliseconds;
+    HTTP X-Content-Duration uses seconds. Metadata uses neutral library/upstream sources. Standard Subsonic endpoints
+    remain available separately.
+
+
+    Authenticate every request using u=username, s=fresh random salt and t=lowercase hexadecimal MD5(UTF8(password
+    + salt)), plus v=1.16.1 and c=client identifier. This is the existing Subsonic protocol, not a new password
+    scheme. Use HTTPS outside local development. Treat tokens as credentials; do not log full authenticated URLs
+    or persist them in playlists, analytics or source control. Use platform secure storage for native credentials,
+    and memory-only credentials for the browser preview. Returned media paths contain no authentication parameters;
+    authenticate them only for this configured server.
+
+
+    JSON requests accept one object, reject unknown request properties and have a 1 MiB body limit. JSON responses
+    permit additive future fields; clients should ignore unknown fields and handle unknown error codes. Normal JSON
+    responses use Cache-Control:no-store. Stream range failures and HEAD responses follow ordinary HTTP semantics
+    and need not have a JSON body.
+
+
+    Creation and append operations accept Idempotency-Key. Retrying the same logical operation must preserve the
+    key, method/path, non-authentication query and exact request body bytes. Keys are scoped per user; completed
+    responses (including 4xx) replay, transient 5xx retain a durable reservation. Native playlist mutations commit
+    atomic operation markers; interrupted playback/job creation uses reserved identities, so lost responses do not
+    create duplicate work. Distinct keys do not share a global mutation lock. Use a new key for a deliberately new
+    request or an expired playback session.'
+servers:
+- url: https://vmi3662398.contaboserver.net/rest/sesh/v1
+  description: Development VPS through existing HTTPS proxy.
+- url: http://127.0.0.1:4533/rest/sesh/v1
+  description: Local development/SSH forwarding only.
+security:
+- SubsonicUsername: []
+  SubsonicToken: []
+  SubsonicSalt: []
+tags:
+- name: Connection
+- name: Discovery
+- name: Library
+- name: Playlists
+- name: Playback
+- name: Audio
+- name: Artwork
+- name: Acquisition
+paths:
+  /capabilities:
+    get:
+      operationId: getCapabilities
+      summary: Inspect features and current-user permissions
+      tags:
+      - Connection
+      description: Feature availability is global; permissions are account-specific. Acquisition additionally requires
+        access to the configured destination library. No upstream credentials or session data are returned.
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capabilities'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /search:
+    get:
+      operationId: search
+      summary: Search or browse four item types
+      tags:
+      - Discovery
+      description: For source=all the first page has independent library and upstream groups; limit applies to each
+        group. Follow each group cursor independently, keeping q and kind and either setting source to that group
+        or keeping source=all. A continuation response contains only the cursor-selected group; append it without
+        replacing the other group. Partial failures return warnings alongside available results. No exact totals
+        or global relevance ordering are promised. Search/browse pagination is not a frozen snapshot if the underlying
+        catalogue changes.
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 300
+        description: Trimmed search text, at most 300 UTF-8 bytes. May be empty or omitted only when source=library,
+          to browse accessible library items.
+      - name: kind
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Kind'
+      - name: source
+        in: query
+        schema:
+          type: string
+          enum:
+          - library
+          - upstream
+          - all
+          default: all
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /artists/{id}:
+    get:
+      operationId: getArtist
+      summary: Get artist metadata
+      tags:
+      - Discovery
+      description: The identity must have the matching kind. Library reads enforce current library access.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Artist'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /albums/{id}:
+    get:
+      operationId: getAlbum
+      summary: Get album metadata
+      tags:
+      - Discovery
+      description: The identity must have the matching kind. Library reads enforce current library access.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Album'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /tracks/{id}:
+    get:
+      operationId: getTrack
+      summary: Get track metadata
+      tags:
+      - Discovery
+      description: The identity must have the matching kind. Library reads enforce current library access.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /artists/{id}/albums:
+    get:
+      operationId: getArtistAlbums
+      summary: Browse artist albums
+      tags:
+      - Discovery
+      description: Library artist browsing lists album-artist albums visible to the user; upstream browsing lists
+        the available upstream releases. Current collection adapters materialize the collection before paging; library
+        collection adapters cap materialized rows at 10001.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlbumPage'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /albums/{id}/tracks:
+    get:
+      operationId: getAlbumTracks
+      summary: Browse ordered album tracks
+      tags:
+      - Discovery
+      description: Library tracks are ordered by disc, track number, then title. Upstream ordering is preserved.
+        Current library collection adapters cap materialized rows at 10001.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackPage'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /tracks/{id}/favorite:
+    post:
+      operationId: setFavorite
+      summary: Set a library-track favourite
+      tags:
+      - Library
+      description: Only library track IDs are accepted. This sets the desired value; it does not toggle blindly.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FavoriteRequest'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteResponse'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playlists:
+    get:
+      operationId: listPlaylists
+      summary: List visible server playlists
+      tags:
+      - Playlists
+      description: Lists server playlists, including mixed playlists, owned by this account or visible through public/admin
+        permissions. Does not enumerate the upstream catalogue; use search for upstream playlist discovery.
+      parameters:
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistPage'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createPlaylist
+      summary: Create a server playlist
+      tags:
+      - Playlists
+      description: Creates an empty owned playlist. Visibility defaults to private.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlaylistRequest'
+      responses:
+        '201':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryPlaylist'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playlists/{id}:
+    get:
+      operationId: getPlaylist
+      summary: Get server or upstream playlist metadata
+      tags:
+      - Playlists
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: patchPlaylist
+      summary: Rename or change visibility
+      tags:
+      - Playlists
+      description: Requires the current revision and an owned/admin-accessible server playlist. Upstream playlists
+        are read-only. At least one of name/public must be supplied.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchPlaylistRequest'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryPlaylist'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deletePlaylist
+      summary: Delete a server playlist
+      tags:
+      - Playlists
+      description: Requires ownership/admin permission and the current revision. Permanent library audio is retained.
+        Deleting an imported playlist does not cause old import jobs to recreate it.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/Revision'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playlists/{id}/entries:
+    get:
+      operationId: getPlaylistEntries
+      summary: Browse ordered playlist occurrences
+      tags:
+      - Playlists
+      description: Library references invisible to this account are filtered. Server entries can mix library and
+        upstream tracks; repeated tracks retain separate entry IDs. Use this response revision for edits. If revisions
+        change between pages, reload before constructing a complete reorder.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistEntryPage'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: appendPlaylistEntries
+      summary: Append library or unsaved upstream tracks
+      tags:
+      - Playlists
+      description: Preserves supplied order and repeats. Unsaved upstream references do not acquire permanent audio.
+        Requires ownership/admin permission, an editable playlist and a matching revision. Maximum total mixed entries
+        is 10000. Track edits are rejected if hidden library entries would otherwise be discarded.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppendEntriesRequest'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryPlaylist'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: reorderPlaylistEntries
+      summary: Reorder all playlist occurrences
+      tags:
+      - Playlists
+      description: Requires a complete permutation of all entry IDs and the current revision. Synchronized/smart
+        tracks are read-only. Native clients edit only the local projection; the extension reorders both sources.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderEntriesRequest'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryPlaylist'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playlists/{id}/entries/{entryId}:
+    delete:
+      operationId: removePlaylistEntry
+      summary: Remove one playlist occurrence
+      tags:
+      - Playlists
+      description: Removes exactly this occurrence, preserving any repeated track elsewhere. Audio is retained.
+        Requires ownership/admin permission and the current revision.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/EntryId'
+      - $ref: '#/components/parameters/Revision'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryPlaylist'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playbacks:
+    post:
+      operationId: createPlayback
+      summary: Prepare a full track for playback
+      tags:
+      - Playback
+      description: Returns 200 if a suitable library copy is ready; otherwise 202 while temporary full-track audio
+        is prepared. Does not create a permanent library entry. Poll statusPath until ready/failed/expired. Preparation
+        uses the configured acquisition quality and preserves account entitlements; an available alternative edition
+        is reported through notices.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlaybackRequest'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playback'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: Preparation accepted; poll the returned statusPath.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playback'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playbacks/{id}:
+    get:
+      operationId: getPlayback
+      summary: Read preparation state
+      tags:
+      - Playback
+      description: Only the creating account can access this session. Ready sessions expire after approximately
+        two minutes without renewal; active streams are separately protected. A server restart expires interrupted
+        preparations; prepare again using a new logical operation.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playback'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: releasePlayback
+      summary: Release a playback request
+      tags:
+      - Playback
+      description: Expires this request and cancels its preparation waiter. Does not cancel other users of a shared
+        download or delete permanent library audio.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Released'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playbacks/{id}/lease:
+    post:
+      operationId: renewPlaybackLease
+      summary: Renew a ready playback lease
+      tags:
+      - Playback
+      description: Renew about every 25–30 seconds during playback. Extends ready-session expiry by approximately
+        two minutes and pins temporary audio. Non-ready/expired/missing cached audio returns 410 PLAYBACK_EXPIRED.
+        No request body is required.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaseResponse'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /offline-acquisitions:
+    post:
+      operationId: createOfflineAcquisition
+      summary: Prepare permanent server copies for device download
+      tags:
+      - Acquisition
+      description: Reuses appropriate library mappings or acquires and indexes complete files into the permanent
+        server library. Server copies remain if Android transfer fails or is cancelled. Successful per-track results
+        contain authenticated download paths, sizes and SHA-256 checksums. Only after that result is available should
+        the device transfer begin. Existing visible library tracks require no provider acquisition work.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfflineRequest'
+      responses:
+        '202':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playlist-imports:
+    post:
+      operationId: importPlaylist
+      summary: Save an entire upstream playlist
+      tags:
+      - Acquisition
+      description: Captures upstream ordering, acquires/indexes unique tracks, then publishes a native playlist
+        retaining repeated occurrences. Name defaults to the upstream title; visibility defaults to public. Publication
+        completes independently of client polling. An unavailable track prevents final playlist publication; completed
+        acquisitions are retained for retry. Does not automatically transfer files to the device.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaylistImportRequest'
+      responses:
+        '202':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /jobs:
+    get:
+      operationId: listJobs
+      summary: List the current user’s latest jobs
+      tags:
+      - Acquisition
+      description: Returns the most recent 100 jobs in creation order, newest first. Includes full results/failures/checksums;
+        there is no includeResults flag or continuation cursor in v1. Poll approximately every 2–3 seconds while
+        jobs are active.
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobList'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      summary: Get job progress and per-track results
+      tags:
+      - Acquisition
+      description: Only the owning account may read a job. Job metadata, identities and permanent files survive
+        restarts. Interrupted acquisitions require retry; successful completed copies are reused. Server job completion
+        does not mean Android has downloaded the files.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /jobs/{id}/cancel:
+    post:
+      operationId: cancelJob
+      summary: Cancel remaining acquisition work
+      tags:
+      - Acquisition
+      description: Cancels remaining queued/running/indexing acquisition work. Complete published library files
+        remain. A job with no remaining acquisition operation returns 409 JOB_NOT_RETRYABLE. No request body is
+        required.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /jobs/{id}/retry:
+    post:
+      operationId: retryJob
+      summary: Retry remaining acquisition work
+      tags:
+      - Acquisition
+      description: Retries failed/cancelled/interrupted acquisition work, reusing completed files. Rechecks current
+        download permission and destination-library access. A non-retryable job returns 409 JOB_NOT_RETRYABLE. No
+        request body is required.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          $ref: '#/components/responses/Error'
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /playbacks/{id}/audio:
+    get:
+      operationId: streamPlaybackAudio
+      summary: Stream prepared audio
+      tags:
+      - Audio
+      description: Authenticated, owner-scoped audio with standard byte Range/If-Range behavior. A ready session
+        and existing complete cache/library file are required. Audio can be MP3, FLAC or an existing library format.
+        Active file handles are protected from temporary-cache eviction. Audio responses use private,no-store caching.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/Range'
+      - $ref: '#/components/parameters/IfRange'
+      responses:
+        '200':
+          description: Complete audio file.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              description: bytes for seekable audio.
+            Content-Length:
+              schema:
+                type: integer
+                minimum: 0
+            Content-Range:
+              schema:
+                type: string
+              description: Present on a range response.
+            ETag:
+              schema:
+                type: string
+              description: Library audio validator when available.
+            Last-Modified:
+              schema:
+                type: string
+            X-Content-Duration:
+              schema:
+                type: number
+              description: Audio duration in seconds when provided.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            audio/flac:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Requested audio byte range; multipart ranges use multipart/byteranges.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              description: bytes for seekable audio.
+            Content-Length:
+              schema:
+                type: integer
+                minimum: 0
+            Content-Range:
+              schema:
+                type: string
+              description: Present on a range response.
+            ETag:
+              schema:
+                type: string
+              description: Library audio validator when available.
+            Last-Modified:
+              schema:
+                type: string
+            X-Content-Duration:
+              schema:
+                type: number
+              description: Audio duration in seconds when provided.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            multipart/byteranges:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: Conditional response; no body.
+        '416':
+          description: Unsatisfiable byte range. Standard HTTP text response; not a JSON error envelope.
+          headers:
+            Content-Range:
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/Error'
+    head:
+      operationId: streamPlaybackAudioHeaders
+      summary: Stream prepared audio headers
+      tags:
+      - Audio
+      description: Authenticated, owner-scoped audio with standard byte Range/If-Range behavior. A ready session
+        and existing complete cache/library file are required. Audio can be MP3, FLAC or an existing library format.
+        Active file handles are protected from temporary-cache eviction. Audio responses use private,no-store caching.
+        HEAD returns the same status and relevant headers without audio bytes.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/Range'
+      - $ref: '#/components/parameters/IfRange'
+      responses:
+        '200':
+          description: Complete audio file.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              description: bytes for seekable audio.
+            Content-Length:
+              schema:
+                type: integer
+                minimum: 0
+            Content-Range:
+              schema:
+                type: string
+              description: Present on a range response.
+            ETag:
+              schema:
+                type: string
+              description: Library audio validator when available.
+            Last-Modified:
+              schema:
+                type: string
+            X-Content-Duration:
+              schema:
+                type: number
+              description: Audio duration in seconds when provided.
+        '206':
+          description: Requested audio byte range; multipart ranges use multipart/byteranges.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              description: bytes for seekable audio.
+            Content-Length:
+              schema:
+                type: integer
+                minimum: 0
+            Content-Range:
+              schema:
+                type: string
+              description: Present on a range response.
+            ETag:
+              schema:
+                type: string
+              description: Library audio validator when available.
+            Last-Modified:
+              schema:
+                type: string
+            X-Content-Duration:
+              schema:
+                type: number
+              description: Audio duration in seconds when provided.
+        '304':
+          description: Conditional response; no body.
+        '416':
+          description: Unsatisfiable byte range. Standard HTTP text response; not a JSON error envelope.
+          headers:
+            Content-Range:
+              schema:
+                type: string
+        default:
+          description: Authenticated error status; HEAD has no response body.
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /tracks/{id}/download:
+    get:
+      operationId: downloadLibraryTrack
+      summary: Download a permanent library file
+      tags:
+      - Audio
+      description: Only library track IDs are accepted; use libraryTrackId/downloadPath from an acquisition result.
+        Enforces current library access and the server download setting. Supports resuming with Range and validators.
+        Verify the final byte count and SHA-256 from the job result before marking a device copy complete.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/Range'
+      - $ref: '#/components/parameters/IfRange'
+      responses:
+        '200':
+          description: Complete audio file.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              description: bytes for seekable audio.
+            Content-Length:
+              schema:
+                type: integer
+                minimum: 0
+            Content-Range:
+              schema:
+                type: string
+              description: Present on a range response.
+            ETag:
+              schema:
+                type: string
+              description: Library audio validator when available.
+            Last-Modified:
+              schema:
+                type: string
+            X-Content-Duration:
+              schema:
+                type: number
+              description: Audio duration in seconds when provided.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            audio/flac:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Requested audio byte range; multipart ranges use multipart/byteranges.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              description: bytes for seekable audio.
+            Content-Length:
+              schema:
+                type: integer
+                minimum: 0
+            Content-Range:
+              schema:
+                type: string
+              description: Present on a range response.
+            ETag:
+              schema:
+                type: string
+              description: Library audio validator when available.
+            Last-Modified:
+              schema:
+                type: string
+            X-Content-Duration:
+              schema:
+                type: number
+              description: Audio duration in seconds when provided.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            multipart/byteranges:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: Conditional response; no body.
+        '416':
+          description: Unsatisfiable byte range. Standard HTTP text response; not a JSON error envelope.
+          headers:
+            Content-Range:
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/Error'
+    head:
+      operationId: downloadLibraryTrackHeaders
+      summary: Download a permanent library file headers
+      tags:
+      - Audio
+      description: Only library track IDs are accepted; use libraryTrackId/downloadPath from an acquisition result.
+        Enforces current library access and the server download setting. Supports resuming with Range and validators.
+        Verify the final byte count and SHA-256 from the job result before marking a device copy complete. HEAD
+        returns the same status and relevant headers without audio bytes.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      - $ref: '#/components/parameters/Range'
+      - $ref: '#/components/parameters/IfRange'
+      responses:
+        '200':
+          description: Complete audio file.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              description: bytes for seekable audio.
+            Content-Length:
+              schema:
+                type: integer
+                minimum: 0
+            Content-Range:
+              schema:
+                type: string
+              description: Present on a range response.
+            ETag:
+              schema:
+                type: string
+              description: Library audio validator when available.
+            Last-Modified:
+              schema:
+                type: string
+            X-Content-Duration:
+              schema:
+                type: number
+              description: Audio duration in seconds when provided.
+        '206':
+          description: Requested audio byte range; multipart ranges use multipart/byteranges.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              description: bytes for seekable audio.
+            Content-Length:
+              schema:
+                type: integer
+                minimum: 0
+            Content-Range:
+              schema:
+                type: string
+              description: Present on a range response.
+            ETag:
+              schema:
+                type: string
+              description: Library audio validator when available.
+            Last-Modified:
+              schema:
+                type: string
+            X-Content-Duration:
+              schema:
+                type: number
+              description: Audio duration in seconds when provided.
+        '304':
+          description: Conditional response; no body.
+        '416':
+          description: Unsatisfiable byte range. Standard HTTP text response; not a JSON error envelope.
+          headers:
+            Content-Range:
+              schema:
+                type: string
+        default:
+          description: Authenticated error status; HEAD has no response body.
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+  /artwork/{id}:
+    get:
+      operationId: getArtwork
+      summary: Get authenticated artwork
+      tags:
+      - Artwork
+      description: Use the artworkPath returned by metadata. The identity denotes the content item whose artwork
+        is requested. Reads recheck library visibility and proxy upstream artwork through this application; credentials
+        are never sent to another host.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        '200':
+          description: Artwork bytes when available.
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: Conditional response when supported by the native artwork handler.
+    head:
+      operationId: getArtworkHeaders
+      summary: Get artwork headers
+      tags:
+      - Artwork
+      description: Authenticated HEAD request; no image body.
+      parameters:
+      - $ref: '#/components/parameters/ItemId'
+      responses:
+        default:
+          description: Authenticated error status; no response body.
+        '200':
+          description: Artwork status and headers; no body.
+    parameters:
+    - $ref: '#/components/parameters/ProtocolVersion'
+    - $ref: '#/components/parameters/Client'
+components:
+  securitySchemes:
+    SubsonicUsername:
+      type: apiKey
+      in: query
+      name: u
+      description: Existing Sesh account username.
+    SubsonicToken:
+      type: apiKey
+      in: query
+      name: t
+      description: Lowercase hex MD5 of UTF-8(password + salt). Never use a real token in examples or logs.
+    SubsonicSalt:
+      type: apiKey
+      in: query
+      name: s
+      description: Fresh cryptographically random salt generated by the client for each request.
+  parameters:
+    ProtocolVersion:
+      name: v
+      in: query
+      required: true
+      schema:
+        type: string
+        default: 1.16.1
+      description: Subsonic protocol version, e.g. 1.16.1. This is separate from the extension API version.
+    Client:
+      name: c
+      in: query
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: sesh-flutter
+      description: Client identifier.
+    ItemId:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/OpaqueId'
+    EntryId:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/OpaqueId'
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        maxLength: 2048
+      description: Opaque cursor returned by the same query/group or collection. Omit for the first page.
+    Revision:
+      name: revision
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/Revision'
+      description: Current server-playlist revision. A stale revision returns 409 PLAYLIST_CHANGED.
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 160
+      description: Recommended for creation/append requests. Keep the same key, method, path, business query and
+        exact JSON bytes when retrying the same operation; use a new key for a new operation. Scope is this authenticated
+        user. Leading/trailing whitespace is rejected. Keys may be reused across users without sharing responses.
+    Range:
+      name: Range
+      in: header
+      schema:
+        type: string
+      example: bytes=0-1023
+      description: HTTP byte range for seeking or resuming.
+    IfRange:
+      name: If-Range
+      in: header
+      schema:
+        type: string
+      description: ETag or Last-Modified validator from a previous response. If the server replies 200 rather than
+        206, replace the partial file instead of appending.
+  responses:
+    Error:
+      description: 'Neutral JSON error. Common HTTP statuses/codes: 400 INVALID_REQUEST; 401 AUTH_REQUIRED; 403
+        FORBIDDEN; 404 NOT_FOUND; 405 INVALID_REQUEST; 409 PLAYLIST_CHANGED, IDEMPOTENCY_CONFLICT, JOB_NOT_RETRYABLE
+        or CANCELLED; 410 PLAYBACK_EXPIRED; 422 MEDIA_UNAVAILABLE, QUALITY_UNAVAILABLE or ACQUISITION_FAILED; 503
+        UPSTREAM_UNAVAILABLE or INDEXING_FAILED; 504 UPSTREAM_UNAVAILABLE; 507 CACHE_FULL. Not all codes apply to
+        every operation. An upstream failure can instead appear in search warnings, failed playback state or a job
+        result.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    OpaqueId:
+      type: string
+      minLength: 1
+      description: Opaque identity. Store and forward unchanged; do not parse it or substitute a legacy API ID.
+    RelativePath:
+      type: string
+      pattern: ^/
+      description: Origin-relative application path, including any configured base path and the API prefix. No credentials
+        are included.
+    Source:
+      type: string
+      enum:
+      - library
+      - upstream
+    Kind:
+      type: string
+      enum:
+      - artist
+      - album
+      - track
+      - playlist
+    Revision:
+      type: integer
+      format: int64
+      minimum: 1
+    Quality:
+      type: string
+      description: Actual audio quality/format label. Examples include MP3_128, MP3_320, FLAC, WAV and OPUS; do
+        not assume a closed enumeration.
+      examples:
+      - MP3_128
+      - FLAC
+    Cursor:
+      type:
+      - string
+      - 'null'
+      description: Opaque continuation cursor; null means this group/page has no more items. Never decode, edit
+        or reuse it for another query or collection.
+    ArtistReference:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/OpaqueId'
+        name:
+          type: string
+      required:
+      - id
+      - name
+    AlbumReference:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/OpaqueId'
+        title:
+          type: string
+      required:
+      - id
+      - title
+    LibraryMatch:
+      type: object
+      properties:
+        trackId:
+          $ref: '#/components/schemas/OpaqueId'
+        quality:
+          $ref: '#/components/schemas/Quality'
+      required:
+      - trackId
+      - quality
+      description: Recorded identity mapping to a matching library copy visible to this account, rather than a title-based
+        match.
+    ItemBase:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/OpaqueId'
+        kind:
+          $ref: '#/components/schemas/Kind'
+        source:
+          $ref: '#/components/schemas/Source'
+        title:
+          type: string
+        artworkPath:
+          anyOf:
+          - $ref: '#/components/schemas/RelativePath'
+          - type: 'null'
+      required:
+      - id
+      - kind
+      - source
+      - title
+      - artworkPath
+      description: Normalized metadata. Additional fields may be added compatibly. Original catalogue titles, descriptions
+        and credits are not rewritten.
+    ErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable category. Clients must handle unknown future codes with a generic
+            error UI.
+          examples:
+          - PLAYLIST_CHANGED
+          - MEDIA_UNAVAILABLE
+        message:
+          type: string
+        retryable:
+          type: boolean
+        requestId:
+          type: string
+      required:
+      - code
+      - message
+      - retryable
+      - requestId
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - error
+    Notice:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+      - code
+      - message
+    Capabilities:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+          const: '1'
+        serverName:
+          type: string
+          const: Sesh Music
+        features:
+          type: object
+          properties:
+            upstreamSearch:
+              type: boolean
+            mixedPlaylists:
+              type: boolean
+            saveEntirePlaylist:
+              type: boolean
+            offlineAcquisition:
+              type: boolean
+          required:
+          - upstreamSearch
+          - mixedPlaylists
+          - saveEntirePlaylist
+          - offlineAcquisition
+        permissions:
+          type: object
+          properties:
+            searchUpstream:
+              type: boolean
+            playUpstream:
+              type: boolean
+            acquire:
+              type: boolean
+            createPlaylist:
+              type: boolean
+          required:
+          - searchUpstream
+          - playUpstream
+          - acquire
+          - createPlaylist
+        acquisitionQuality:
+          type: string
+          enum:
+          - MP3_128
+          - MP3_320
+          - FLAC
+      required:
+      - apiVersion
+      - serverName
+      - features
+      - permissions
+      - acquisitionQuality
+    Artist:
+      allOf:
+      - $ref: '#/components/schemas/ItemBase'
+      - type: object
+        properties:
+          kind:
+            const: artist
+          name:
+            type: string
+          albumCount:
+            type: integer
+            minimum: 0
+        required:
+        - name
+    Album:
+      allOf:
+      - $ref: '#/components/schemas/ItemBase'
+      - type: object
+        properties:
+          kind:
+            const: album
+          artist:
+            $ref: '#/components/schemas/ArtistReference'
+          trackCount:
+            type: integer
+            minimum: 0
+          durationMs:
+            type: integer
+            minimum: 0
+        required:
+        - artist
+    Track:
+      allOf:
+      - $ref: '#/components/schemas/ItemBase'
+      - type: object
+        properties:
+          kind:
+            const: track
+          artist:
+            $ref: '#/components/schemas/ArtistReference'
+          album:
+            $ref: '#/components/schemas/AlbumReference'
+          durationMs:
+            type: integer
+            minimum: 0
+          trackNumber:
+            type: integer
+            minimum: 0
+          libraryMatch:
+            anyOf:
+            - $ref: '#/components/schemas/LibraryMatch'
+            - type: 'null'
+          starred:
+            type: boolean
+        required:
+        - artist
+        - album
+        - durationMs
+        - trackNumber
+        - libraryMatch
+    LibraryPlaylist:
+      allOf:
+      - $ref: '#/components/schemas/ItemBase'
+      - type: object
+        properties:
+          kind:
+            const: playlist
+          name:
+            type: string
+          ownerId:
+            type: string
+          ownerName:
+            type: string
+          public:
+            type: boolean
+          revision:
+            $ref: '#/components/schemas/Revision'
+          entryCount:
+            type: integer
+            minimum: 0
+          trackCount:
+            type: integer
+            minimum: 0
+          editable:
+            type: boolean
+          source:
+            const: library
+        required:
+        - name
+        - ownerId
+        - ownerName
+        - public
+        - revision
+        - entryCount
+        - trackCount
+        - editable
+    UpstreamPlaylist:
+      allOf:
+      - $ref: '#/components/schemas/ItemBase'
+      - type: object
+        properties:
+          kind:
+            const: playlist
+          name:
+            type: string
+          creator:
+            type: string
+          description:
+            type: string
+          trackCount:
+            type: integer
+            minimum: 0
+          source:
+            const: upstream
+        required:
+        - name
+        - creator
+        - description
+        - trackCount
+    Playlist:
+      oneOf:
+      - $ref: '#/components/schemas/LibraryPlaylist'
+      - $ref: '#/components/schemas/UpstreamPlaylist'
+    Item:
+      oneOf:
+      - $ref: '#/components/schemas/Artist'
+      - $ref: '#/components/schemas/Album'
+      - $ref: '#/components/schemas/Track'
+      - $ref: '#/components/schemas/Playlist'
+    SearchWarning:
+      type: object
+      properties:
+        source:
+          $ref: '#/components/schemas/Source'
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+      required:
+      - source
+      - code
+      - message
+      - retryable
+    SearchGroup:
+      type: object
+      properties:
+        source:
+          $ref: '#/components/schemas/Source'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        nextCursor:
+          $ref: '#/components/schemas/Cursor'
+      required:
+      - source
+      - items
+      - nextCursor
+    SearchResponse:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/Kind'
+        query:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchGroup'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchWarning'
+      required:
+      - kind
+      - query
+      - groups
+      - warnings
+    AlbumPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Album'
+        nextCursor:
+          $ref: '#/components/schemas/Cursor'
+      required:
+      - items
+      - nextCursor
+    TrackPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+        nextCursor:
+          $ref: '#/components/schemas/Cursor'
+      required:
+      - items
+      - nextCursor
+    PlaylistPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LibraryPlaylist'
+        nextCursor:
+          $ref: '#/components/schemas/Cursor'
+      required:
+      - items
+      - nextCursor
+    PlaylistEntry:
+      type: object
+      properties:
+        entryId:
+          $ref: '#/components/schemas/OpaqueId'
+        position:
+          type: integer
+          minimum: 0
+        track:
+          $ref: '#/components/schemas/Track'
+      required:
+      - entryId
+      - position
+      - track
+      description: Position is zero-based. Repeated tracks have different entryId values. Server-playlist entry
+        IDs remain stable through reorders and restarts. Upstream collection entry IDs describe the current upstream
+        ordering.
+    PlaylistEntryPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlaylistEntry'
+        nextCursor:
+          $ref: '#/components/schemas/Cursor'
+        revision:
+          anyOf:
+          - $ref: '#/components/schemas/Revision'
+          - type: 'null'
+      required:
+      - items
+      - nextCursor
+      - revision
+      description: A server-playlist revision and its entries come from one database snapshot. Upstream playlists
+        return revision=null and are read-only.
+    CreatePlaylistRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Trimmed nonempty name, at most 300 UTF-8 bytes.
+        public:
+          type: boolean
+          default: false
+      required:
+      - name
+      additionalProperties: false
+    PatchPlaylistRequest:
+      type: object
+      properties:
+        revision:
+          $ref: '#/components/schemas/Revision'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Trimmed nonempty name, at most 300 UTF-8 bytes.
+        public:
+          type: boolean
+      required:
+      - revision
+      anyOf:
+      - required:
+        - name
+      - required:
+        - public
+      additionalProperties: false
+    AppendEntriesRequest:
+      type: object
+      properties:
+        revision:
+          $ref: '#/components/schemas/Revision'
+        trackIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpaqueId'
+          minItems: 1
+          maxItems: 10000
+      required:
+      - revision
+      - trackIds
+      additionalProperties: false
+    ReorderEntriesRequest:
+      type: object
+      properties:
+        revision:
+          $ref: '#/components/schemas/Revision'
+        entryIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpaqueId'
+          maxItems: 10000
+          uniqueItems: true
+      required:
+      - revision
+      - entryIds
+      additionalProperties: false
+      description: Complete permutation of all current entry IDs, not just the loaded page. Include each occurrence
+        exactly once. Load the complete playlist before reordering.
+    Deleted:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+          const: true
+      required:
+      - deleted
+    FavoriteRequest:
+      type: object
+      properties:
+        starred:
+          type: boolean
+      required:
+      - starred
+      additionalProperties: false
+    FavoriteResponse:
+      type: object
+      properties:
+        starred:
+          type: boolean
+      required:
+      - starred
+    CreatePlaybackRequest:
+      type: object
+      properties:
+        trackId:
+          $ref: '#/components/schemas/OpaqueId'
+      required:
+      - trackId
+      additionalProperties: false
+    Playback:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/OpaqueId'
+        state:
+          type: string
+          enum:
+          - preparing
+          - ready
+          - failed
+          - expired
+        requestedTrackId:
+          $ref: '#/components/schemas/OpaqueId'
+        statusPath:
+          $ref: '#/components/schemas/RelativePath'
+        expiresAt:
+          type: string
+          format: date-time
+        notices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notice'
+        resolvedTrack:
+          $ref: '#/components/schemas/Track'
+        quality:
+          $ref: '#/components/schemas/Quality'
+        audioPath:
+          $ref: '#/components/schemas/RelativePath'
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - id
+      - state
+      - requestedTrackId
+      - statusPath
+      - expiresAt
+      - notices
+      description: Ready responses include resolvedTrack, quality and audioPath; preparing responses do not. A failed
+        preparation includes error. resolvedTrack can be an existing library copy or an available alternative edition.
+        Only ready sessions have usable audio.
+    LeaseResponse:
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - expiresAt
+    Released:
+      type: object
+      properties:
+        released:
+          type: boolean
+          const: true
+      required:
+      - released
+    OfflineRequest:
+      type: object
+      properties:
+        trackIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpaqueId'
+          minItems: 1
+          maxItems: 10000
+      required:
+      - trackIds
+      additionalProperties: false
+    PlaylistImportRequest:
+      type: object
+      properties:
+        playlistId:
+          $ref: '#/components/schemas/OpaqueId'
+        name:
+          type: string
+          maxLength: 300
+          description: Optional custom name, at most 300 UTF-8 bytes. Omitted or blank values use the upstream playlist
+            title.
+        public:
+          type: boolean
+          default: true
+      required:
+      - playlistId
+      additionalProperties: false
+    AcquisitionResult:
+      type: object
+      properties:
+        requestedTrackId:
+          $ref: '#/components/schemas/OpaqueId'
+        libraryTrackId:
+          $ref: '#/components/schemas/OpaqueId'
+        downloadPath:
+          $ref: '#/components/schemas/RelativePath'
+        sizeBytes:
+          type: integer
+          format: int64
+          minimum: 0
+        format:
+          type: string
+        quality:
+          $ref: '#/components/schemas/Quality'
+        sha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+      required:
+      - requestedTrackId
+      - libraryTrackId
+      - downloadPath
+      - sizeBytes
+      - format
+      - quality
+      - sha256
+    AcquisitionFailure:
+      type: object
+      properties:
+        requestedTrackId:
+          $ref: '#/components/schemas/OpaqueId'
+        track:
+          $ref: '#/components/schemas/Track'
+        state:
+          const: failed
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - requestedTrackId
+      - track
+      - state
+      - error
+    CurrentTrack:
+      type: object
+      properties:
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+        artistName:
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - title
+      - artistName
+    Job:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/OpaqueId'
+        type:
+          type: string
+          enum:
+          - offline-acquisition
+          - playlist-import
+        state:
+          type: string
+          enum:
+          - queued
+          - running
+          - complete
+          - failed
+          - cancelled
+          - interrupted
+        phase:
+          type: string
+          enum:
+          - queued
+          - acquiring
+          - indexing
+          - creating-playlist
+          - complete
+        completedTracks:
+          type: integer
+          minimum: 0
+        totalTracks:
+          type: integer
+          minimum: 0
+        currentTrack:
+          anyOf:
+          - $ref: '#/components/schemas/CurrentTrack'
+          - type: 'null'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AcquisitionResult'
+        failures:
+          type: array
+          items:
+            $ref: '#/components/schemas/AcquisitionFailure'
+        pendingTrackIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpaqueId'
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+        statusPath:
+          $ref: '#/components/schemas/RelativePath'
+        playlistId:
+          anyOf:
+          - $ref: '#/components/schemas/OpaqueId'
+          - type: 'null'
+      required:
+      - id
+      - type
+      - state
+      - phase
+      - completedTracks
+      - totalTracks
+      - currentTrack
+      - results
+      - failures
+      - pendingTrackIds
+      - error
+      - statusPath
+      description: Counts describe unique requested tracks. completedTracks can advance before indexing makes download
+        results available. Successes in results include verified file metadata; actual failures are in failures,
+        and unattempted/cancelled/interrupted work remains in pendingTrackIds. Completed playlist-import jobs include
+        playlistId; it is null if that published playlist was later deleted. Device transfer is managed by the client
+        and is not represented by this server job.
+    JobList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Job'
+          maxItems: 100
+      required:
+      - items
