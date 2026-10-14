@@ -1,0 +1,8 @@
+{
+  "name": "sesh music",
+  "description": "Spotify-inspired Subsonic music streaming app with gapless playback, offline caching, and smart playlist sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
