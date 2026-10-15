@@ -1,8 +1,14 @@
 # Flutter implementation notes
 
 - Original application revision: `907460f` (React/TypeScript web export).
-- Matching Sesh backend implementation: `edda8e32`; API contract copied unchanged
-  from its `docs/sesh/mobile-api-v1.openapi.yaml` into `docs/api/`.
+- Matching Sesh backend implementation: `f2f00006`; mobile API 1.1.0 contract is
+  synchronized from `docs/sesh/mobile-api-v1.openapi.yaml` into `docs/api/`.
+- Collection update: `771e830` and final album intent guard `2fa65e3`. Album offline
+  acquisitions create private server playlists; new playlist imports are private.
+  Artist biographies/year metadata, menu-based playlist removal, and the live /
+  development selector are implemented. Final web/APK builds and 20 Flutter tests
+  pass; full native/Flutter browser flows pass against isolated real HTTP services.
+  Physical-device Android lifecycle behavior remains a manual check.
 - Feature branch: `feature/flutter-sesh-v1`; original files moved intact to `web-reference/`.
 - Flutter toolchain: stable 3.47.7, upstream revision `abaf9c523780a608bd46686fd5e53740a07077f8`.
 - One Go backend is supplied by the Sesh Music server repository. This repository

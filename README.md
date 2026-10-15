@@ -5,7 +5,7 @@ The original React/TypeScript export is preserved in `web-reference/`, and its o
 Git history remains on this branch. It is a visual reference, not a runtime dependency.
 
 The client uses one server connection and the authenticated `/rest/sesh/v1` API.
-The matching backend implementation is `edda8e32`. The approved API contract is
+The matching backend implementation is `f2f00006` (mobile API contract 1.1.0). The approved API contract is
 included at [docs/api/mobile-api-v1.openapi.yaml](docs/api/mobile-api-v1.openapi.yaml);
 the server repository's corresponding file is its source of truth.
 No upstream account credentials are held by the app. Provider implementation names
