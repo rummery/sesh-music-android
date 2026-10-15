@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/content.dart';
 import '../services/controller.dart';
+import '../services/api.dart';
 
 const seshGreen = Color(0xff1ed760);
 
@@ -730,8 +731,8 @@ class ConnectionPanel extends StatefulWidget {
 }
 
 class _ConnectionPanelState extends State<ConnectionPanel> {
-  late final TextEditingController server = TextEditingController(
-    text: widget.controller.api.baseUrl,
+  late String environment = SeshEnvironment.forServer(
+    widget.controller.api.baseUrl,
   );
   late final TextEditingController username = TextEditingController(
     text: widget.controller.api.username,
@@ -741,7 +742,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   bool remember = true;
   @override
   void dispose() {
-    server.dispose();
     username.dispose();
     password.dispose();
     super.dispose();
@@ -754,7 +754,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
     });
     try {
       await widget.controller.connect(
-        server.text,
+        SeshEnvironment.url(environment),
         username.text,
         password.text,
         remember,
@@ -793,14 +793,25 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 28),
-              TextField(
-                key: const Key('server-url'),
-                controller: server,
-                keyboardType: TextInputType.url,
+              DropdownButtonFormField<String>(
+                key: const Key('server-environment'),
+                initialValue: environment,
                 decoration: const InputDecoration(
-                  labelText: 'Server URL',
+                  labelText: 'Environment',
                   prefixIcon: Icon(Icons.dns_outlined),
                 ),
+                items: const [
+                  DropdownMenuItem(value: 'live', child: Text('live')),
+                  DropdownMenuItem(
+                    value: 'development',
+                    child: Text('development'),
+                  ),
+                ],
+                onChanged: widget.controller.busy
+                    ? null
+                    : (value) {
+                        if (value != null) setState(() => environment = value);
+                      },
               ),
               const SizedBox(height: 16),
               TextField(
@@ -970,6 +981,7 @@ class TrackRow extends StatelessWidget {
   final VoidCallback onPlay;
   final Future<void> Function(List<MusicItem>) onAdd;
   final Widget? trailing;
+  final Future<void> Function()? onRemove;
   final void Function(MusicItem)? onOpen;
   const TrackRow({
     super.key,
@@ -978,11 +990,14 @@ class TrackRow extends StatelessWidget {
     required this.onPlay,
     required this.onAdd,
     this.trailing,
+    this.onRemove,
     this.onOpen,
   });
   Future<void> _action(String action) async {
     try {
       switch (action) {
+        case 'remove':
+          await onRemove?.call();
         case 'play':
           onPlay();
         case 'add':
@@ -1065,6 +1080,11 @@ class TrackRow extends StatelessWidget {
                   const PopupMenuItem(
                     value: 'album',
                     child: Text('Go to album'),
+                  ),
+                if (onRemove != null)
+                  const PopupMenuItem(
+                    value: 'remove',
+                    child: Text('Remove from playlist'),
                   ),
               ],
             ),
@@ -1549,6 +1569,16 @@ class _CollectionViewState extends State<CollectionView> {
     }
   }
 
+  Future<void> removeEntry(String entryId) => action(() async {
+    await c.api.request(
+      'DELETE',
+      '$base/entries/${Uri.encodeComponent(entryId)}',
+      parameters: {'revision': '${metadata.json['revision']}'},
+    );
+    await c.refreshPlaylists();
+    await load(reset: true);
+  });
+
   Future<void> reorder(int from, int to) async {
     if (to > from) {
       to--;
@@ -1691,6 +1721,11 @@ class _CollectionViewState extends State<CollectionView> {
         ],
       ),
       const SizedBox(height: 24),
+      if (metadata.kind == 'artist' && metadata.biography.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: SelectableText(metadata.biography),
+        ),
       if (metadata.kind != 'artist')
         Wrap(
           spacing: 10,
@@ -1714,6 +1749,7 @@ class _CollectionViewState extends State<CollectionView> {
                   : () => action(() async {
                       await c.downloadOffline(
                         await c.collectionTracks(metadata),
+                        album: metadata.kind == 'album' ? metadata : null,
                       );
                     }),
               icon: const Icon(Icons.download),
@@ -1793,24 +1829,8 @@ class _CollectionViewState extends State<CollectionView> {
                         c.play(entry.track, tracks: tracks, index: index),
                     onAdd: widget.onAdd,
                     onOpen: widget.onOpen,
+                    onRemove: acting ? null : () => removeEntry(entry.id),
                   ),
-                ),
-                IconButton(
-                  tooltip: 'Remove playlist entry',
-                  icon: const Icon(Icons.remove_circle_outline),
-                  onPressed: acting
-                      ? null
-                      : () => action(() async {
-                          await c.api.request(
-                            'DELETE',
-                            '$base/entries/${Uri.encodeComponent(entry.id)}',
-                            parameters: {
-                              'revision': '${metadata.json['revision']}',
-                            },
-                          );
-                          await c.refreshPlaylists();
-                          await load(reset: true);
-                        }),
                 ),
                 ReorderableDragStartListener(
                   index: index,
@@ -1831,6 +1851,9 @@ class _CollectionViewState extends State<CollectionView> {
             onPlay: () => c.play(track, tracks: tracks, index: index),
             onAdd: widget.onAdd,
             onOpen: widget.onOpen,
+            onRemove: editable && !acting
+                ? () => removeEntry(PlaylistEntry.fromJson(items[index]).id)
+                : null,
           ),
       if (cursor != null)
         Align(

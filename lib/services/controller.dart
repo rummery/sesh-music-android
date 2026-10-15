@@ -35,6 +35,7 @@ class SeshController extends ChangeNotifier {
   final Map<String, TransferToken> _tokens = {};
   final Map<String, List<MusicItem>> _offlineJobs = {};
   final Map<String, List<MusicItem>> _offlineIntents = {};
+  final Map<String, String> _offlineIntentAlbums = {};
   final Set<String> _notifiedJobs = {};
   bool _loadedJobs = false;
   final Map<String, bool> favorites = {};
@@ -80,6 +81,7 @@ class SeshController extends ChangeNotifier {
     favorites.clear();
     _offlineJobs.clear();
     _offlineIntents.clear();
+    _offlineIntentAlbums.clear();
     _notifiedJobs.clear();
     _loadedJobs = false;
     _pollingJobs = false;
@@ -155,6 +157,12 @@ class SeshController extends ChangeNotifier {
                 prefs.getString('sesh.offline-intents.${api.scope}') ?? '{}',
               )
               as Map;
+      final albums =
+          jsonDecode(
+                prefs.getString('sesh.offline-albums.${api.scope}') ?? '{}',
+              )
+              as Map;
+      albums.forEach((key, value) => _offlineIntentAlbums['$key'] = '$value');
       intents.forEach((key, value) {
         _offlineIntents['$key'] = jsonList(value).map(MusicItem.new).toList();
       });
@@ -463,7 +471,7 @@ class SeshController extends ChangeNotifier {
     final generation = _accountGeneration;
     final job = await api.post('/playlist-imports', {
       'playlistId': playlist.id,
-      'public': true,
+      'public': false,
     }, idempotencyKey: SeshApi.newKey());
     if (generation != _accountGeneration) return;
     if (job['id'] != null) {
@@ -473,20 +481,25 @@ class SeshController extends ChangeNotifier {
     await refreshJobs();
   }
 
-  Future<void> downloadOffline(List<MusicItem> tracks) async {
+  Future<void> downloadOffline(
+    List<MusicItem> tracks, {
+    MusicItem? album,
+  }) async {
     final generation = _accountGeneration;
     final pending = tracks.where((t) => !isOffline(t.id)).toList();
-    if (pending.isEmpty) {
+    if (pending.isEmpty && album == null) {
       toast('Already downloaded on this device');
       return;
     }
     final fingerprint = jsonEncode(pending.map((e) => e.id).toList());
     final existing = _offlineIntents.entries.where(
       (entry) =>
-          jsonEncode(entry.value.map((e) => e.id).toList()) == fingerprint,
+          jsonEncode(entry.value.map((e) => e.id).toList()) == fingerprint &&
+          _offlineIntentAlbums[entry.key] == album?.id,
     );
     final key = existing.isEmpty ? SeshApi.newKey() : existing.first.key;
     _offlineIntents[key] = pending;
+    if (album != null) _offlineIntentAlbums[key] = album.id;
     await _persistPending();
     if (generation != _accountGeneration) return;
     await _submitOfflineIntent(key, pending);
@@ -497,13 +510,17 @@ class SeshController extends ChangeNotifier {
   Future<void> _submitOfflineIntent(String key, List<MusicItem> pending) async {
     final generation = _accountGeneration;
     final job = await api.post('/offline-acquisitions', {
-      'trackIds': pending.map((e) => e.id).toList(),
+      if (_offlineIntentAlbums[key] != null)
+        'albumId': _offlineIntentAlbums[key]
+      else
+        'trackIds': pending.map((e) => e.id).toList(),
     }, idempotencyKey: key);
     if (generation != _accountGeneration) return;
     _offlineJobs['${job['id']}'] = pending;
     // Persist the acknowledged job before removing its retryable creation intent.
     await _persistPending();
     _offlineIntents.remove(key);
+    _offlineIntentAlbums.remove(key);
     await _persistPending();
   }
 
@@ -519,7 +536,9 @@ class SeshController extends ChangeNotifier {
         (id, tracks) => MapEntry(id, tracks.map((t) => t.json).toList()),
       ),
     );
+    final albums = jsonEncode(_offlineIntentAlbums);
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('sesh.offline-albums.$scope', albums);
     await prefs.setString('sesh.pending.$scope', pending);
     await prefs.setString('sesh.offline-intents.$scope', intents);
   }

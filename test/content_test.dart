@@ -1,7 +1,29 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sesh_music/models/content.dart';
+import 'package:sesh_music/services/api.dart';
 
 void main() {
+  test('album subtitles include available release year and artist', () {
+    const album = MusicItem({
+      'kind': 'album',
+      'title': 'Album',
+      'artist': {'name': 'Asura'},
+      'year': 2009,
+    });
+    expect(album.subtitle, 'Asura · 2009');
+    expect(
+      const MusicItem({
+        'kind': 'album',
+        'artist': {'name': 'Asura'},
+      }).subtitle,
+      'Asura',
+    );
+    expect(
+      SeshEnvironment.url('development'),
+      'https://vmi3662398.contaboserver.net',
+    );
+  });
+
   test('opaque identities and millisecond durations are preserved', () {
     const item = MusicItem({
       'id': 'item:opaque',

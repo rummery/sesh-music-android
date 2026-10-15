@@ -19,8 +19,15 @@ class MusicItem {
   String get artworkPath => '${json['artworkPath'] ?? ''}';
   int get durationMs => intValue(json['durationMs']);
   int get trackCount => intValue(json['trackCount'] ?? json['songCount']);
+  int get year => intValue(json['year']);
+  String get biography => '${json['biography'] ?? ''}';
   bool get isTrack => kind == 'track';
-  String get subtitle => isTrack || kind == 'album'
+  String get subtitle => kind == 'album'
+      ? [
+          artistName,
+          if (year > 0) '$year',
+        ].where((s) => s.isNotEmpty).join(' · ')
+      : isTrack
       ? artistName
       : kind == 'playlist'
       ? '${trackCount > 0 ? '$trackCount tracks · ' : ''}${json['owner'] ?? source}'

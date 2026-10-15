@@ -9,6 +9,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/content.dart';
 
+/// Only these environments are presented in the connection UI.
+class SeshEnvironment {
+  static const live = 'https://sesh.b33r.us';
+  static const development = 'https://vmi3662398.contaboserver.net';
+  static String url(String environment) =>
+      environment == 'live' ? live : development;
+  static String forServer(String base) =>
+      Uri.tryParse(base)?.host == Uri.parse(live).host ? 'live' : 'development';
+}
+
 class ApiFailure implements Exception {
   final String code;
   final String message;
@@ -35,9 +45,7 @@ class SeshApi {
           baseUrl ??
           const String.fromEnvironment('SESH_SERVER', defaultValue: '') {
     if (this.baseUrl.isEmpty) {
-      this.baseUrl = kIsWeb
-          ? Uri.base.origin
-          : 'https://vmi3662398.contaboserver.net';
+      this.baseUrl = kIsWeb ? Uri.base.origin : SeshEnvironment.live;
     }
   }
   bool get connected => username.isNotEmpty && capabilities.isNotEmpty;

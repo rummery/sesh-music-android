@@ -18,8 +18,8 @@ The native Sesh server serves the Flutter release at:
 
 **https://vmi3662398.contaboserver.net/mobile/**
 
-Connect using your normal Sesh username and password. The preview defaults to the
-same server origin. Passwords are kept in browser memory only, so refresh requires
+Connect using your normal Sesh username and password. Select **development** for this VPS, or **live** for the production server.
+The connection form shows environment names rather than hostnames. Passwords are kept in browser memory only, so refresh requires
 reconnecting. The original server frontend remains at `/`.
 
 For local development through VS Code port forwarding, forward server port 4533 and
@@ -55,13 +55,10 @@ are not needed. See the server's Sesh setup documentation for enabling this moun
 Build output, runtime credentials, offline audio, SDKs and signing keys are ignored
 by Git.
 
-To use another server, set it in the connection form. Android defaults to the public
-HTTPS server. A build-time default can also be supplied:
-
-```sh
-flutter build web --release --base-href /mobile/ \
-  --dart-define=SESH_SERVER=https://your-server.example
-```
+The connection selector maps **live** to `https://sesh.b33r.us` and
+**development** to `https://vmi3662398.contaboserver.net`. Android defaults to live;
+the preview on the development host selects development. Saved connections retain
+their environment selection. There is no editable hostname field.
 
 Cross-origin browser previews require explicit server CORS support. The installed
 same-origin `/mobile/` preview avoids this requirement. A standalone development
@@ -98,8 +95,12 @@ be verified on a real device; browser tests do not prove Android behavior.
   playlists. Unsaved upstream references persist server-side and repeated tracks
   retain separate entry identities. Revision conflicts are reported instead of
   overwriting another device's edits.
-- Save Entire Playlist creates a public server playlist after acquisition/indexing.
+- Save Entire Playlist creates a private server playlist after acquisition/indexing.
   Server activity shows progress, errors, cancellation and retry.
+- Album Download for Offline creates/reuses a private playlist named after the
+  album, containing permanent library tracks in album order.
+- Artist pages show plain-text biographies where metadata is available; album
+  cards include release years where known. Playlist removal lives in Track actions.
 - Download for Offline first creates/reuses permanent server-library audio. Only
   after that succeeds does the client fetch and SHA-256 verify its device copy.
   Server copies survive device-transfer failures and cancellation.

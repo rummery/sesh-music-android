@@ -2,7 +2,7 @@ openapi: 3.1.0
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Sesh Music mobile extension API
-  version: 1.0.0
+  version: 1.1.0
   description: 'Implemented v1 contract for the Flutter client and the existing single Go application. All paths
     are relative to /rest/sesh/v1. Existing account authentication protects JSON, artwork and audio equally. IDs
     are opaque and are not interchangeable with legacy Subsonic item IDs. Durations in JSON use integer milliseconds;
@@ -601,7 +601,7 @@ paths:
       tags:
       - Acquisition
       description: Captures upstream ordering, acquires/indexes unique tracks, then publishes a native playlist
-        retaining repeated occurrences. Name defaults to the upstream title; visibility defaults to public. Publication
+        retaining repeated occurrences. Name defaults to the upstream title; visibility defaults to private. Publication
         completes independently of client polling. An unavailable track prevents final playlist publication; completed
         acquisitions are retained for retry. Does not automatically transfer files to the device.
       parameters:
@@ -1417,6 +1417,9 @@ components:
           albumCount:
             type: integer
             minimum: 0
+          biography:
+            type: string
+            description: Optional plain-text biography on artist detail. Uses configured metadata agents, including for upstream-only artists; unavailable biographies do not fail collection browsing.
         required:
         - name
     Album:
@@ -1428,6 +1431,13 @@ components:
             const: album
           artist:
             $ref: '#/components/schemas/ArtistReference'
+          year:
+            type: integer
+            minimum: 0
+            description: Release year when known; zero means unknown.
+          releaseDate:
+            type: string
+            description: Release date supplied by the catalogue or library, empty when unknown.
           trackCount:
             type: integer
             minimum: 0
@@ -1813,15 +1823,23 @@ components:
       - released
     OfflineRequest:
       type: object
+      description: Specify trackIds or albumId. Album mode creates or reuses a private playlist named after the album, containing indexed library tracks in album order. Device transfer starts after permanent acquisition.
       properties:
+        albumId:
+          $ref: '#/components/schemas/OpaqueId'
         trackIds:
           type: array
           items:
             $ref: '#/components/schemas/OpaqueId'
           minItems: 1
           maxItems: 10000
-      required:
-      - trackIds
+      oneOf:
+      - required: [trackIds]
+        not:
+          required: [albumId]
+      - required: [albumId]
+        not:
+          required: [trackIds]
       additionalProperties: false
     PlaylistImportRequest:
       type: object
@@ -1835,7 +1853,7 @@ components:
             title.
         public:
           type: boolean
-          default: true
+          default: false
       required:
       - playlistId
       additionalProperties: false
