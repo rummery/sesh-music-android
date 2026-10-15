@@ -1,5 +1,7 @@
 # Sesh Music — Flutter client
 
+User-verified stable baseline: [2026-10-15 checkpoint](docs/STABLE-2026-10-15.md), tagged locally as `stable-2026-10-15`.
+
 Flutter Android application and responsive browser preview for the Sesh Music server.
 The original React/TypeScript export is preserved in `web-reference/`, and its original
 Git history remains on this branch. It is a visual reference, not a runtime dependency.
