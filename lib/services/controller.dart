@@ -177,7 +177,11 @@ class SeshController extends ChangeNotifier {
     if (generation != _accountGeneration) return;
     for (final entry in _offlineIntents.entries.toList()) {
       unawaited(
-        _submitOfflineIntent(entry.key, entry.value).catchError((_) {}),
+        _submitOfflineIntent(
+          entry.key,
+          entry.value,
+          albumId: _offlineIntentAlbums[entry.key],
+        ).catchError((_) {}),
       );
     }
   }
@@ -502,16 +506,20 @@ class SeshController extends ChangeNotifier {
     if (album != null) _offlineIntentAlbums[key] = album.id;
     await _persistPending();
     if (generation != _accountGeneration) return;
-    await _submitOfflineIntent(key, pending);
+    await _submitOfflineIntent(key, pending, albumId: album?.id);
     toast('Preparing permanent server copies before device download');
     await refreshJobs();
   }
 
-  Future<void> _submitOfflineIntent(String key, List<MusicItem> pending) async {
+  Future<void> _submitOfflineIntent(
+    String key,
+    List<MusicItem> pending, {
+    String? albumId,
+  }) async {
     final generation = _accountGeneration;
     final job = await api.post('/offline-acquisitions', {
-      if (_offlineIntentAlbums[key] != null)
-        'albumId': _offlineIntentAlbums[key]
+      if (albumId != null)
+        'albumId': albumId
       else
         'trackIds': pending.map((e) => e.id).toList(),
     }, idempotencyKey: key);
